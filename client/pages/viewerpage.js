@@ -138,7 +138,7 @@ export function ViewerPageComponent({ error, subscribe, unsubscribe, match, loca
             setState({ title: title });
         };
 
-        helmet();
+        helmet(filename);
         metadata().then(data_fetch);
         return history.listen(() => {});
     }, [path]);

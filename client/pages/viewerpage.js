@@ -8,8 +8,9 @@ import { Files, Chromecast } from "../model/";
 import {
     BreadCrumb, Bundle, NgIf, Loader, EventReceiver, LoggedInOnly, ErrorPage,
 } from "../components/";
-import { opener, notify, objectGet } from "../helpers/";
+import { opener, notify, objectGet, toTitleCase } from "../helpers/";
 import { FileDownloader, ImageViewer, PDFViewer, FormViewer } from "./viewerpage/";
+import { Meta } from "../components/meta";
 
 const VideoPlayer = (props) => (
     <Bundle
@@ -45,7 +46,7 @@ const EbookViewer = (props) => (
         symbol="EbookViewer">
         {(Comp) => <Comp {...props}/>}
     </Bundle>
-)
+);
 
 
 export function ViewerPageComponent({ error, subscribe, unsubscribe, match, location }) {
@@ -55,6 +56,7 @@ export function ViewerPageComponent({ error, subscribe, unsubscribe, match, loca
     const [state, setState] = useReducer((s, a) => {
         return { ...s, ...a };
     }, {
+        title: null,
         url: null,
         opener: null,
         content: null,
@@ -73,7 +75,7 @@ export function ViewerPageComponent({ error, subscribe, unsubscribe, match, loca
             reader.onload = () => done(reader.result);
             reader.readAsText(file);
         })).then((content) => {
-            let oldContent = state.content;
+            const oldContent = state.content;
             setState({ content: content });
             return Files.save(path, file)
                 .then(() => setState({ isSaving: false }))
@@ -83,7 +85,7 @@ export function ViewerPageComponent({ error, subscribe, unsubscribe, match, loca
                     notify.send(err, "error");
                 });
         });
-    }
+    };
 
     const needSaving = (bool) => {
         setState({ needSaving: bool });
@@ -131,12 +133,20 @@ export function ViewerPageComponent({ error, subscribe, unsubscribe, match, loca
             });
         };
 
+        const helmet = (url) => {
+            const title = toTitleCase(url.split("/").pop().split(".")[0]);
+            setState({ title: title });
+        };
+
+        helmet();
         metadata().then(data_fetch);
-        return history.listen(() => {})
+        return history.listen(() => {});
     }, [path]);
 
     return (
         <div className="component_page_viewerpage">
+            <Meta title={state.title}>
+            </Meta>
             <BreadCrumb needSaving={state.needSaving} className="breadcrumb" path={path} />
             <div className="page_container">
                 <NgIf cond={state.loading === true}>
